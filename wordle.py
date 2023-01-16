@@ -1,29 +1,38 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 import nltk
 import random
 nltk.download("words")
 from nltk.corpus import words
 
 app = Flask(__name__)
+app.secret_key = "mysecretkey"
 word_list = words.words()
 words_five = [word for word in word_list if len(word) ==5]
-word = random.choice(words_five)
-attempt = 0
 
 @app.route('/', methods=["GET", "POST"])
 def wordle():
+    if "word" not in session: 
+        session["word"] = random.choice(words_five)
+    if "attempt" not in session: 
+        session["attempt"] = 0
+    word = session["word"]
+    attempt = session["attempt"]
     correct_letters = ''
     incorrect_letters = ''
     mispositioned = ''
     result = ''
-    global attempt
     if request.method == 'POST':
         guess = request.form["guess"].lower()
-        attempt +=1
+        session["attempt"] +=1
+        attempt = session["attempt"]
         if guess == word:
             result = "You Guessed The Word!"
+            session.pop("word")
+            session.pop("attempt")
         elif attempt == 6:
             result = "Sorry, you have reached the maximum number of attempts. The word was {}".format(word)
+            session.pop("word")
+            session.pop("attempt")
         else:
             for i in range(len(guess)):
                 if guess[i] in word and guess[i] != word[i]:
